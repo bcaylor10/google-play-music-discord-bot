@@ -1,28 +1,48 @@
 import discord
-import asyncio
+from discord.ext import commands
+#import asyncio
 
-client = discord.Client()
+TOKEN = ''
 
-TOKEN = 'NTUxOTc2OTAwNzkzNDY2ODkx.D14-IA.nDeEtjj60niCOsGHMjOTmufG67g';
+bot = commands.Bot(command_prefix='.')
 
-@client.event
+@bot.event
 async def on_ready():
-    print('Bot is running...')
+    print('Bot is ready...')
 
-@client.event
-async def on_message(message):
-    if message.content.startswith('$play'):
-        reply = message.content.replace('$play', '')
-        await client.send_message(message.channel, 'Playing' + reply)
-    elif message.content.startswith('$test'):
-        reply = message.content.replace('$test', '')
-        user = message.author.id
-        channel = message.author.voice_channel
-        if channel != None:
-            await client.send_message(message.channel, 'Testing' + reply)
-            await client.join_voice_channel(channel)
-        else:
-            await client.send_message(message.channel, 'You must be in a voice channel for me to work, dumbass.')
+# @bot.event
+# async def on_message_delete(message):
+#     author = message.author
+#     content = message.content
+#     channel = message.channel
+
+#     await bot.send_message(channel, '{}: {}'.format(author, content))
+
+@bot.command()
+async def ping():
+    await bot.say('Pong!') #say can only be used in a command, send_message can be used in commands and events
+
+@bot.command()
+async def echo(*args):
+    output = ''
+
+    for word in args:
+        output += word + ' '
+    
+    await bot.say(output)
+
+@bot.command(pass_context=True)
+async def clear(ctx, amount=100):
+    channel = ctx.message.channel
+    messages = []
+
+    async for message in bot.logs_from(channel, limit=int(amount)):
+        messages.append(message)
+
+    await bot.delete_messages(messages)
+    await bot.say(str(amount) + ' messages deleted.')
 
 
-client.run(TOKEN);
+
+bot.run(TOKEN);
+
