@@ -8,7 +8,7 @@ import youtube_dl
 from funcy import pluck
 import random
 
-TOKEN = 'NTUxOTc2OTAwNzkzNDY2ODkx.D2XVUQ.t5mL9_exRJhhGxFkIu2ROzuCF5A'
+TOKEN = ''
 
 bot = commands.Bot(command_prefix='.')
 bot.remove_command('help')
