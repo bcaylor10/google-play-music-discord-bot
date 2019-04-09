@@ -7,7 +7,7 @@ from gmusicapi import Mobileclient
 import youtube_dl
 import random
 
-TOKEN = 'NTU5MjA1ODIxNDQ4NDU0MTUz.D3iBXQ.ZfDZOR-ghxHq3dAtU5cMusNnqs8'
+TOKEN = ''
 
 bot = commands.Bot(command_prefix='.')
 bot.remove_command('help')
@@ -256,5 +256,12 @@ async def help(ctx):
     message = '\n'.join([msg, cmd1, cmd2, cmd3, cmd4, cmd5, cmd6, cmd7, cmd8])
 
     await bot.send_message(author, str(message))
+    
+#gets info of the current song
+@bot.command(pass_context=True)
+async def info(ctx):
+    author = ctx.message.author
+    info = getSongInfo()
+    await bot.send_message(author, + ' this song is called `' + info[0] + ' by ' + info[1] + '`')
 
 bot.run(TOKEN);
