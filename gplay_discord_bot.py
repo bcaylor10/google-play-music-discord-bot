@@ -5,10 +5,9 @@ from itertools import cycle
 import opuslib
 from gmusicapi import Mobileclient
 import youtube_dl
-from funcy import pluck
 import random
 
-TOKEN = 'NTUxOTc2OTAwNzkzNDY2ODkx.D2XVUQ.t5mL9_exRJhhGxFkIu2ROzuCF5A'
+TOKEN = 'NTU5MjA1ODIxNDQ4NDU0MTUz.D3iBXQ.ZfDZOR-ghxHq3dAtU5cMusNnqs8'
 
 bot = commands.Bot(command_prefix='.')
 bot.remove_command('help')
@@ -16,6 +15,8 @@ bot.remove_command('help')
 players = {}
 queue = []
 currentSong = []
+songs = []
+
 
 api = Mobileclient()
 # api.perform_oauth(storage_filepath='mobileclient.cred', open_browser=True)
@@ -23,6 +24,7 @@ api.oauth_login(api.FROM_MAC_ADDRESS, '/Users/brandon/Desktop/discord-bot/mobile
 
 library = api.get_all_songs()
 
+#checks the queue and gets the next song if there is one
 def check_queue(id):
     if queue != []:
         currentSong.append(queue[1])
@@ -31,14 +33,16 @@ def check_queue(id):
         players[id] = player
         player.start()
 
+#helper function to stop
 def halt(id):
     if id in players:
-            players[id].stop()
-            players.pop(id)
+        players[id].stop()
+        players.pop(id)
             
     if id in queue:
         queue.pop(id)
 
+#get the info of the current song
 def getSongInfo():
     current = []
 
@@ -53,10 +57,7 @@ def getSongInfo():
 
     return title, artist
 
-# async def updateStatus():
-
-#     # await bot.change_presence(game=discord.Game(name='to --song name here--', type=1))
-
+#starts the bot
 @bot.event
 async def on_ready():
     print('Bot is running...')
@@ -98,6 +99,7 @@ async def leave(ctx):
     else:
         await bot.say("I must be in a voice channel before I can leave, " + str(ctx.message.author.mention))
 
+#play
 @bot.command(pass_context=True)
 async def play(ctx):
     url = api.get_stream_url('Tnnxtonah7rm4isw7sumapx7r4y')
@@ -137,13 +139,8 @@ async def resume(ctx):
 #stop
 @bot.command(pass_context=True)
 async def stop(ctx):
-    server = ctx.message.server
-    halt(server.id)
-
-@bot.command(pass_context=True)
-async def qlen(ctx):
-    server = ctx.message.server
-    print('Queue Length: ' + str(len(queue)))
+    id = ctx.message.server.id
+    halt(id)
 
 #shuffle
 @bot.command(pass_context=True)
@@ -152,7 +149,10 @@ async def shuffle(ctx):
     voice_client = bot.voice_client_in(server)
     channel = ctx.message.author.voice.voice_channel
 
-    songs = list(pluck('storeId', library))
+    songs = []
+
+    for song in range(0, len(library)):
+        songs.append(library[song].get('storeId'))
 
     random.shuffle(songs)
     url = api.get_stream_url(songs[0])
@@ -169,6 +169,12 @@ async def shuffle(ctx):
             queue.append(songs[song])
         
         player.start()
+
+        info = getSongInfo()
+
+        await bot.say('Playing ' + info[0] + ' by ' + info[1])
+        await bot.change_presence(game=discord.Game(name=''+info[0]+' by '+info[1], type=1))
+
     else:
         if channel == None:
             await bot.say("You must be in a voice channel in order for me to play a song, " + str(ctx.message.author.mention))
@@ -188,6 +194,12 @@ async def shuffle(ctx):
 
             player.start()
 
+            info = getSongInfo()
+
+            await bot.say('Playing ' + info[0] + ' by ' + info[1])
+            await bot.change_presence(game=discord.Game(name=''+info[0]+' by '+info[1], type=1))
+
+#troubleshooting function
 @bot.command(pass_context=True)
 async def check(ctx):
     server = ctx.message.server
@@ -197,6 +209,7 @@ async def check(ctx):
     print('Checking Current Song ' + str(currentSong))
     print('Checking Current Queue ' + str(queue))
 
+#goes to the next song
 @bot.command(pass_context=True)
 async def next(ctx):
     server = ctx.message.server
@@ -210,6 +223,7 @@ async def next(ctx):
         
         currentSong.append(queue[0])
         currentSong.pop(0)
+        info = getSongInfo()
         queue.pop(0)
 
         url = api.get_stream_url(currentSong[0])
@@ -218,6 +232,9 @@ async def next(ctx):
         players[server.id] = player #adds server's player to dictionary
 
         player.start()
+
+        await bot.say('Playing `' + info[0] + ' by ' + info[1] + '`')
+        await bot.change_presence(game=discord.Game(name=''+info[0]+' by '+info[1], type=1))
     else:
         await bot.say("There are no more songs in the queue, " + str(ctx.message.author.mention))
 
@@ -230,8 +247,8 @@ async def help(ctx):
     cmd1 = '```.shuffle: Shuffles the library and immediately plays music.'
     cmd2 = '.pause: Pauses the current player.'
     cmd3 = '.resume: Resumes the current player.'
-    cmd4 = '.info: Provides info of the current song.'
-    cmd5 =  '.stop: Stops the current player.'
+    cmd4 = '.next: Skips the current song.'
+    cmd5 = '.stop: Stops the current player.'
     cmd6 = '.join: Join current voice channel.'
     cmd7 = '.leave: Leave current voice channel.'
     cmd8 = '.clear: Clears the last 100 messages in any channel. However, inserting a space and any number greater than 0 will clear that many messages.```'
@@ -239,12 +256,5 @@ async def help(ctx):
     message = '\n'.join([msg, cmd1, cmd2, cmd3, cmd4, cmd5, cmd6, cmd7, cmd8])
 
     await bot.send_message(author, str(message))
-
-#gets info of the current song
-@bot.command(pass_context=True)
-async def info(ctx):
-    author = ctx.message.author
-    info = getSongInfo()
-    await bot.send_message(author, + ' this song is called `' + info[0] + ' by ' + info[1] + '`')
 
 bot.run(TOKEN);
